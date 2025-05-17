@@ -3,6 +3,7 @@ import numpy as np
 from prophet import Prophet
 import matplotlib.pyplot as plt
 import os
+import pickle
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, f1_score
 
 # Load data
@@ -24,223 +25,121 @@ df['Order Date'] = pd.to_datetime(df['Order Date'])
 daily_sales_per_product = df.groupby(['Order Date', 'ProductID'])['Quantity'].sum().reset_index()
 daily_sales_per_product.columns = ['ds', 'ProductID', 'y']
 
-# Create a dictionary of current stock levels from the inventory CSV
-product_stock = {}
-for _, row in inventory.iterrows():
-    product_stock[row['productID']] = row['CurrentStock']
-
-# Get list of all product IDs from Product.csv (not just those with sales)
-product_ids = products['ProductID'].unique()
-
-# Forecast horizons
-forecast_days_list = [1, 3, 5, 7, 30]
-
-# Dictionary to store forecasts
-forecast_data = []
-
-# Function to forecast and plot one product with separate subplots
-def plot_forecast_subplots(product_id):
-    df_p = daily_sales_per_product[daily_sales_per_product['ProductID'] == product_id]
-    
-    if len(df_p) < 2:
-        print(f"Not enough data for {product_id}")
-        return None
-    
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))  # 2 rows x 3 cols
-    axes = axes.flatten()
-
-    alerts = []
-
-    for idx, days in enumerate(forecast_days_list):
-        model = Prophet(
-            yearly_seasonality=True,
-            weekly_seasonality=True,
-            daily_seasonality=False,
-            changepoint_prior_scale=0.2,  # Increased from default 0.05
-            seasonality_prior_scale=15    # Increased from default 10
-        )
-        model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
-        model.add_country_holidays(country_name='MY')  # Malaysia holidays
-        model.fit(df_p[['ds', 'y']])
-        
-        future = model.make_future_dataframe(periods=days)
-        forecast = model.predict(future)
-
-        forecast_subset = forecast[forecast['ds'] > df_p['ds'].max()].head(days)
-        total_forecast = round(forecast_subset['yhat'].sum())
-        stock = product_stock.get(product_id, 0)
-
-        # Alert message
-        status = "Restock Needed" if stock < total_forecast else " OK"
-        alert_msg = f"{days} day(s): {total_forecast} units ({status})"
-        alerts.append(alert_msg)
-
-        # Store forecast data
-        forecast_data.append({
-            'ProductID': product_id,
-            'Days': days,
-            'Forecasted': total_forecast,
-            'Current Stock': stock,
-            'Stock Status': 'Restock Needed' if stock < total_forecast else 'OK'
-        })
-
-        # Plot historical + forecast
-        ax = axes[idx]
-        ax.plot(df_p['ds'], df_p['y'], 'o-', label='Historical Sales')
-        ax.plot(forecast['ds'], forecast['yhat'], 'r--', label='Forecast')
-        ax.axvline(x=df_p['ds'].max(), color='gray', linestyle=':', label='Forecast Start')
-        ax.set_title(f'{days}-Day Forecast')
-        ax.grid(True)
-        ax.legend()
-
-    # Hide extra subplot if any
-    for idx in range(len(forecast_days_list), len(axes)):
-        fig.delaxes(axes[idx])
-
-    # Add summary title
-    full_alert = "\n".join(alerts)
-    fig.suptitle(f"Sales Forecast for {product_id}\n\n{full_alert}", fontsize=14, y=0.95)
-
-    plt.tight_layout(rect=[0, 0.03, 1, 0.92])
-    plt.show()
-
-# After the main forecasting loop, add:
-
-
-# Plot forecast for each product in a single window with subplots
-for pid in product_ids:
-    plot_forecast_subplots(pid)
-
-# Convert forecast data to DataFrame
-forecast_df = pd.DataFrame(forecast_data)
-
-# Save to CSV
-output_file = 'product_forecasts.csv'
-forecast_df.to_csv(output_file, index=False)
-
-print(f"\n Forecast saved to '{os.path.abspath(output_file)}'")
-
-
-def evaluate_forecast(y_true, y_pred, stock_level):
-    # Regression metrics
-    mae = mean_absolute_error(y_true, y_pred)
-    rmse = mean_squared_error(y_true, y_pred, squared=False)
-    r2 = r2_score(y_true, y_pred)
-    # Classification: 1 if forecast > stock, else 0
-    y_true_class = (y_true > stock_level).astype(int)
-    y_pred_class = (y_pred > stock_level).astype(int)
-    acc = accuracy_score(y_true_class, y_pred_class)
-    f1 = f1_score(y_true_class, y_pred_class)
-    return {'mae': mae, 'rmse': rmse, 'r2': r2, 'accuracy': acc, 'f1': f1}
-
-    evaluation_results = []
-
-
-
-# Aggregate weekly sales per product for better long-term forecasting
+# Aggregate weekly sales per product
 weekly_sales_per_product = df.groupby([
     pd.Grouper(key='Order Date', freq='W-MON'), 'ProductID'
 ])['Quantity'].sum().reset_index()
 weekly_sales_per_product.columns = ['ds', 'ProductID', 'y']
 
-# Use weekly_sales_per_product instead of daily_sales_per_product in your functions
-def plot_forecast_subplots(product_id):
-    df_p = weekly_sales_per_product[weekly_sales_per_product['ProductID'] == product_id]
+# Create a dictionary of current stock levels from the inventory CSV
+product_stock = {row['productID']: row['CurrentStock'] for _, row in inventory.iterrows()}
+
+# Get list of all product IDs from Product.csv
+product_ids = products['ProductID'].unique()
+
+# Forecast horizons
+forecast_days_list = [1, 3, 5, 7, 30]
+forecast_weeks_list = [1, 2, 3, 4, 12]
+
+# Dictionary to store forecasts
+forecast_data = []
+evaluation_results = []
+
+# Function to forecast and plot (handles both daily and weekly)
+def plot_forecast_subplots(product_id, data, horizons, freq='D', label='Day'):
+    df_p = data[data['ProductID'] == product_id]
     if len(df_p) < 2:
-        print(f"Not enough data for {product_id}")
+        print(f"Not enough data for {product_id} ({freq})")
         return None
+    
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
     axes = axes.flatten()
     alerts = []
-    for idx, weeks in enumerate([1, 2, 3, 4, 12]):  # 1, 2, 3, 4, 12 weeks (approx 1, 2, 3, 4, 12 months)
+
+    for idx, horizon in enumerate(horizons):
         model = Prophet(
             yearly_seasonality=True,
-            weekly_seasonality=False,  # Already aggregated weekly
+            weekly_seasonality=(freq == 'D'),
             daily_seasonality=False,
             changepoint_prior_scale=0.2,
             seasonality_prior_scale=15
         )
-        model.add_seasonality(name='monthly', period=4, fourier_order=3)  # 4 weeks ~ 1 month
+        model.add_seasonality(name='monthly', period=30.5 if freq == 'D' else 4, fourier_order=5 if freq == 'D' else 3)
         model.add_country_holidays(country_name='MY')
         model.fit(df_p[['ds', 'y']])
-        future = model.make_future_dataframe(periods=weeks, freq='W-MON')
+        
+        future = model.make_future_dataframe(periods=horizon, freq=freq)
         forecast = model.predict(future)
-        forecast_subset = forecast[forecast['ds'] > df_p['ds'].max()].head(weeks)
+
+        forecast_subset = forecast[forecast['ds'] > df_p['ds'].max()].head(horizon)
         total_forecast = round(forecast_subset['yhat'].sum())
         stock = product_stock.get(product_id, 0)
-        status = "Restock Needed" if stock < total_forecast else " OK"
-        alert_msg = f"{weeks} week(s): {total_forecast} units ({status})"
+
+        status = "Restock Needed" if stock < total_forecast else "OK"
+        alert_msg = f"{horizon} {label}(s): {total_forecast} units ({status})"
         alerts.append(alert_msg)
+
         forecast_data.append({
             'ProductID': product_id,
-            'Weeks': weeks,
+            f'{label}s': horizon,
             'Forecasted': total_forecast,
             'Current Stock': stock,
-            'Stock Status': 'Restock Needed' if stock < total_forecast else 'OK'
+            'Stock Status': status
         })
+
         ax = axes[idx]
         ax.plot(df_p['ds'], df_p['y'], 'o-', label='Historical Sales')
         ax.plot(forecast['ds'], forecast['yhat'], 'r--', label='Forecast')
         ax.axvline(x=df_p['ds'].max(), color='gray', linestyle=':', label='Forecast Start')
-        ax.set_title(f'{weeks}-Week Forecast')
+        ax.set_title(f'{horizon}-{label} Forecast')
         ax.grid(True)
         ax.legend()
-    for idx in range(5, len(axes)):
+
+    for idx in range(len(horizons), len(axes)):
         fig.delaxes(axes[idx])
+
     full_alert = "\n".join(alerts)
-    fig.suptitle(f"Weekly Sales Forecast for {product_id}\n\n{full_alert}", fontsize=14, y=0.95)
+    fig.suptitle(f"{label}ly Sales Forecast for {product_id}\n\n{full_alert}", fontsize=14, y=0.95)
     plt.tight_layout(rect=[0, 0.03, 1, 0.92])
     plt.show()
 
-def walk_forward_validation(df, product_id, forecast_weeks_list, train_window=20, step=1):
+# Walk-forward validation
+def walk_forward_validation(df, product_id, forecast_horizons, freq='W-MON', train_window=20, step=1):
     df_p = df[df['ProductID'] == product_id].sort_values('ds')
     results = []
-    for start in range(0, len(df_p) - train_window - max(forecast_weeks_list) + 1, step):
+    for start in range(0, len(df_p) - train_window - max(forecast_horizons) + 1, step):
         train = df_p.iloc[start:start+train_window]
         test_start = start + train_window
-        for horizon in forecast_weeks_list:
+        for horizon in forecast_horizons:
             test = df_p.iloc[test_start:test_start+horizon]
             if len(test) < 1:
                 continue
             model = Prophet(
                 yearly_seasonality=True,
-                weekly_seasonality=False,
+                weekly_seasonality=(freq == 'D'),
                 daily_seasonality=False,
                 changepoint_prior_scale=0.2,
                 seasonality_prior_scale=15
             )
-            model.add_seasonality(name='monthly', period=4, fourier_order=3)
+            model.add_seasonality(name='monthly', period=30.5 if freq == 'D' else 4, fourier_order=5 if freq == 'D' else 3)
             model.fit(train[['ds', 'y']])
-            future = model.make_future_dataframe(periods=horizon, freq='W-MON')
+            future = model.make_future_dataframe(periods=horizon, freq=freq)
             forecast = model.predict(future)
             y_pred = forecast['yhat'][-horizon:].values
             y_true = test['y'].values
             mae = mean_absolute_error(y_true, y_pred)
-            mse = mean_squared_error(y_true, y_pred)
-            rmse = np.sqrt(mse)
-            if len(test) > 1:
-                r2 = r2_score(y_true, y_pred)
-            else:
-                r2 = float('nan')
+            rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+            r2 = r2_score(y_true, y_pred) if len(test) > 1 else float('nan')
             results.append({'horizon': horizon, 'mae': mae, 'rmse': rmse, 'r2': r2})
     return pd.DataFrame(results)
 
-for pid in product_ids:
-    if pid in daily_sales_per_product['ProductID'].unique():
-        wfv_results = walk_forward_validation(daily_sales_per_product, pid, forecast_days_list)
-        evaluation_results.append(wfv_results)
-
-
+# Regression report
 def regression_report(results_df):
-    """
-    Print a regression report from a DataFrame of results.
-    Expects columns: 'horizon', 'mae', 'rmse', 'r2'
-    """
     print("Regression Performance Report")
     print("="*30)
     for horizon in sorted(results_df['horizon'].unique()):
         subset = results_df[results_df['horizon'] == horizon]
-        print(f"\nHorizon: {horizon} day(s)")
+        print(f"\nHorizon: {horizon} period(s)")
         print(f"  MAE : {subset['mae'].mean():.4f}")
         print(f"  RMSE: {subset['rmse'].mean():.4f}")
         print(f"  R²  : {subset['r2'].mean():.4f}")
@@ -249,22 +148,38 @@ def regression_report(results_df):
     print(f"  RMSE: {results_df['rmse'].mean():.4f}")
     print(f"  R²  : {results_df['r2'].mean():.4f}")
 
-    if evaluation_results:
-        combined_results = pd.concat(evaluation_results)
-        regression_report(combined_results)
-        combined_results.to_csv('forecast_evaluation.csv', index=False) 
-import pickle
+# Run forecasts and evaluations
+for pid in product_ids:
+    # Daily forecast
+    plot_forecast_subplots(pid, daily_sales_per_product, forecast_days_list, freq='D', label='Day')
+    # Weekly forecast
+    plot_forecast_subplots(pid, weekly_sales_per_product, forecast_weeks_list, freq='W-MON', label='Week')
+    # Walk-forward validation (using weekly data for stability)
+    if pid in weekly_sales_per_product['ProductID'].unique():
+        wfv_results = walk_forward_validation(weekly_sales_per_product, pid, forecast_weeks_list, freq='W-MON')
+        if not wfv_results.empty:
+            evaluation_results.append(wfv_results)
 
-# Existing code for saving forecast_df to CSV
+# Convert forecast data to DataFrame
 forecast_df = pd.DataFrame(forecast_data)
+
+# Save forecast to CSV
 output_file = 'product_forecasts.csv'
 forecast_df.to_csv(output_file, index=False)
 print(f"\nForecast saved to '{os.path.abspath(output_file)}'")
 
-# Save forecast_df and combined_results to a .pkl file
+# Combine evaluation results
+combined_results = pd.concat(evaluation_results) if evaluation_results else pd.DataFrame()
+
+# Save evaluation results to CSV
+if not combined_results.empty:
+    combined_results.to_csv('forecast_evaluation.csv', index=False)
+    regression_report(combined_results)
+
+# Save forecast_df and combined_results to .pkl file
 results_dict = {
     'forecast_df': forecast_df,
-    'evaluation_results': combined_results if evaluation_results else None
+    'evaluation_results': combined_results if not combined_results.empty else None
 }
 pkl_output_file = 'forecast_results.pkl'
 with open(pkl_output_file, 'wb') as f:
