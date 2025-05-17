@@ -1,0 +1,246 @@
+{
+  "last_updated": "2025-05-17",
+  "predictions": [
+    {
+      "ProductID": "PRD001",
+      "Days": 1.0,
+      "Forecasted": 2,
+      "Current Stock": 120,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD001",
+      "Days": 3.0,
+      "Forecasted": 6,
+      "Current Stock": 120,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD001",
+      "Days": 5.0,
+      "Forecasted": 15,
+      "Current Stock": 120,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD001",
+      "Days": 7.0,
+      "Forecasted": 38,
+      "Current Stock": 120,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD001",
+      "Days": 30.0,
+      "Forecasted": 3669,
+      "Current Stock": 120,
+      "Stock Status": "Restock Needed",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD002",
+      "Days": 1.0,
+      "Forecasted": 1,
+      "Current Stock": 150,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD002",
+      "Days": 3.0,
+      "Forecasted": -1,
+      "Current Stock": 150,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD002",
+      "Days": 5.0,
+      "Forecasted": -4,
+      "Current Stock": 150,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD002",
+      "Days": 7.0,
+      "Forecasted": -5,
+      "Current Stock": 150,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD002",
+      "Days": 30.0,
+      "Forecasted": 453,
+      "Current Stock": 150,
+      "Stock Status": "Restock Needed",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD003",
+      "Days": 1.0,
+      "Forecasted": 0,
+      "Current Stock": 130,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD003",
+      "Days": 3.0,
+      "Forecasted": -3,
+      "Current Stock": 130,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD003",
+      "Days": 5.0,
+      "Forecasted": -6,
+      "Current Stock": 130,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD003",
+      "Days": 7.0,
+      "Forecasted": -8,
+      "Current Stock": 130,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD003",
+      "Days": 30.0,
+      "Forecasted": 15,
+      "Current Stock": 130,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD004",
+      "Days": 1.0,
+      "Forecasted": 1,
+      "Current Stock": 100,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD004",
+      "Days": 3.0,
+      "Forecasted": 4,
+      "Current Stock": 100,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD004",
+      "Days": 5.0,
+      "Forecasted": 5,
+      "Current Stock": 100,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD004",
+      "Days": 7.0,
+      "Forecasted": 6,
+      "Current Stock": 100,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD004",
+      "Days": 30.0,
+      "Forecasted": 31,
+      "Current Stock": 100,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD005",
+      "Days": 1.0,
+      "Forecasted": 2,
+      "Current Stock": 90,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD005",
+      "Days": 3.0,
+      "Forecasted": 3,
+      "Current Stock": 90,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD005",
+      "Days": 5.0,
+      "Forecasted": -4,
+      "Current Stock": 90,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD005",
+      "Days": 7.0,
+      "Forecasted": -25,
+      "Current Stock": 90,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD005",
+      "Days": 30.0,
+      "Forecasted": -2913,
+      "Current Stock": 90,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD006",
+      "Days": 1.0,
+      "Forecasted": 1,
+      "Current Stock": 80,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD006",
+      "Days": 3.0,
+      "Forecasted": 6,
+      "Current Stock": 80,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD006",
+      "Days": 5.0,
+      "Forecasted": 10,
+      "Current Stock": 80,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD006",
+      "Days": 7.0,
+      "Forecasted": 14,
+      "Current Stock": 80,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    },
+    {
+      "ProductID": "PRD006",
+      "Days": 30.0,
+      "Forecasted": 8,
+      "Current Stock": 80,
+      "Stock Status": "OK",
+      "Weeks": NaN
+    }
+  ],
+  "status": "success"
+}
