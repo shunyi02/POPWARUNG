@@ -52,7 +52,14 @@ def plot_forecast_subplots(product_id):
     alerts = []
 
     for idx, days in enumerate(forecast_days_list):
-        model = Prophet(yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=False)
+        model = Prophet(
+            yearly_seasonality=True,
+            weekly_seasonality=True,
+            daily_seasonality=False,
+            changepoint_prior_scale=0.2,  # Increased from default 0.05
+            seasonality_prior_scale=15    # Increased from default 10
+        )
+        model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
         model.add_country_holidays(country_name='MY')  # Malaysia holidays
         model.fit(df_p[['ds', 'y']])
         
@@ -97,7 +104,17 @@ def plot_forecast_subplots(product_id):
     plt.tight_layout(rect=[0, 0.03, 1, 0.92])
     plt.show()
 
+# After the main forecasting loop, add:
+evaluation_results = []
+for pid in product_ids:
+    if pid in daily_sales_per_product['ProductID'].unique():
+        wfv_results = walk_forward_validation(daily_sales_per_product, pid, forecast_days_list)
+        evaluation_results.append(wfv_results)
 
+if evaluation_results:
+    combined_results = pd.concat(evaluation_results)
+    regression_report(combined_results)
+    combined_results.to_csv('forecast_evaluation.csv', index=False)
 
 # Plot forecast for each product in a single window with subplots
 for pid in product_ids:
@@ -113,7 +130,6 @@ forecast_df.to_csv(output_file, index=False)
 print(f"\n Forecast saved to '{os.path.abspath(output_file)}'")
 
 
-# --- Place all function definitions here ---
 def evaluate_forecast(y_true, y_pred, stock_level):
     # Regression metrics
     mae = mean_absolute_error(y_true, y_pred)
@@ -126,7 +142,7 @@ def evaluate_forecast(y_true, y_pred, stock_level):
     f1 = f1_score(y_true_class, y_pred_class)
     return {'mae': mae, 'rmse': rmse, 'r2': r2, 'accuracy': acc, 'f1': f1}
 
-def walk_forward_validation(df, product_id, forecast_days_list, train_window=30, step=1):
+def walk_forward_validation(df, product_id, forecast_days_list, train_window=60, step=1):
     df_p = df[df['ProductID'] == product_id].sort_values('ds')
     results = []
     for start in range(0, len(df_p) - train_window - max(forecast_days_list) + 1, step):
@@ -136,7 +152,14 @@ def walk_forward_validation(df, product_id, forecast_days_list, train_window=30,
             test = df_p.iloc[test_start:test_start+horizon]
             if len(test) < 1:
                 continue
-            model = Prophet(yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=False)
+            model = Prophet(
+                yearly_seasonality=True,
+                weekly_seasonality=True,
+                daily_seasonality=False,
+                changepoint_prior_scale=0.2,
+                seasonality_prior_scale=15
+            )
+            model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
             model.fit(train[['ds', 'y']])
             future = model.make_future_dataframe(periods=horizon)
             forecast = model.predict(future)
@@ -148,20 +171,10 @@ def walk_forward_validation(df, product_id, forecast_days_list, train_window=30,
             if len(test) > 1:
                 r2 = r2_score(y_true, y_pred)
             else:
-                r2 = float('nan')  # or None
+                r2 = float('nan')
             results.append({'horizon': horizon, 'mae': mae, 'rmse': rmse, 'r2': r2})
     return pd.DataFrame(results)
-# After the main forecasting loop, add:
-evaluation_results = []
-for pid in product_ids:
-    if pid in daily_sales_per_product['ProductID'].unique():
-        wfv_results = walk_forward_validation(daily_sales_per_product, pid, forecast_days_list)
-        evaluation_results.append(wfv_results)
 
-if evaluation_results:
-    combined_results = pd.concat(evaluation_results)
-    regression_report(combined_results)
-    combined_results.to_csv('forecast_evaluation.csv', index=False)
 
 def regression_report(results_df):
     """
