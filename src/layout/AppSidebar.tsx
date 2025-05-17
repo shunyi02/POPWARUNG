@@ -40,11 +40,11 @@ const navItems: NavItem[] = [
     name: "Insights",
     path: "/blank",
   },
-  // {
-  //   icon: <UserCircleIcon />,
-  //   name: "User Profile",
-  //   path: "/profile",
-  // },
+  {
+    name: "Products",
+    icon: <TableIcon />,
+    path: "/profile",
+  },
   // {
   //   name: "Forms",
   //   icon: <ListIcon />,
