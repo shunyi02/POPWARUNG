@@ -23,11 +23,6 @@ export default function Home() {
           allowFullScreen
         />
       </div>
-      
-      {/* POS Terminal Section */}
-      <div className="mt-4 col-span-12 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <POSTerminal />
-      </div>
     </>
   );
 }
