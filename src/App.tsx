@@ -19,6 +19,8 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import Products from "./pages/Products";
+import POSTerminal from "./components/pos/POSTerminal";
+import Sales from "./pages/Sales";
 
 export default function App() {
   return (
@@ -37,6 +39,9 @@ export default function App() {
             <Route path="/products" element={<Products />} />
             <Route path="/insight" element={<Blank />} /> {/* Added route for /insight */}
 
+            {/* POS Terminal */}
+            <Route path="/pos-terminal" element={<POSTerminal />} /> {/* Added route for /pos-terminal */}
+
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />
 
@@ -50,6 +55,7 @@ export default function App() {
             <Route path="/buttons" element={<Buttons />} />
             <Route path="/images" element={<Images />} />
             <Route path="/videos" element={<Videos />} />
+            <Route path="/sales" element={<Sales />} />
 
             {/* Charts */}
             <Route path="/line-chart" element={<LineChart />} />
