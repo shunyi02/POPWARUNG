@@ -34,39 +34,17 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/"
-    // subItems: [
-    //   { name: "Ecommerce", path: "/", pro: false },
-    //   { name: "Ecommerce", path: "/", pro: false },
-    // ],
-  },
-  {
-    icon: <ListIcon />,
-    name: "Insights",
-    path: "/insight",
   },
   // {
-  //   icon: <UserCircleIcon />,
-  //   name: "User Profile",
-  //   path: "/profile",
-  // },
-  // {
-  //   name: "Forms",
   //   icon: <ListIcon />,
-  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+  //   name: "Insights",
+  //   path: "/insight",
   // },
-  // {
-  //   name: "Tables",
-  //   icon: <TableIcon />,
-  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  // },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Blank Page", path: "/blank", pro: false },
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Products",
+    path: "/products",
+  },
 ];
 
 const othersItems: NavItem[] = [
