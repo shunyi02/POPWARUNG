@@ -3,12 +3,18 @@ import pickle
 import json
 from datetime import datetime, timedelta
 from flask import Flask, jsonify
+import os
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
 def predict():
+    if not os.path.exists('forecast_results.pkl'):
+        raise FileNotFoundError("Model file 'forecast_results.pkl' not found.")
+
+    if not os.path.exists('data/Sales.csv'):
+        raise FileNotFoundError("Sales data file 'data/Sales.csv' not found.")
     # Load the saved model and results
     with open('forecast_results.pkl', 'rb') as f:
         results_dict = pickle.load(f)

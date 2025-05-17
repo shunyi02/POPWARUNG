@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import {
@@ -10,43 +11,41 @@ import {
 import Badge from "../components/ui/badge/Badge";
 
 interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  stock: number;
-  status: "In Stock" | "Low Stock" | "Out of Stock";
+  productID: string;
+  product_name: string;
+  CurrentStock: number;
+  ReorderPoint: number;
+  SafetyStock: number;
+  restock_required: number;
 }
 
-// Sample data - replace with actual data later
-const products: Product[] = [
-  {
-    id: "P001",
-    name: "Product 1",
-    category: "Category A",
-    price: 29.99,
-    stock: 100,
-    status: "In Stock"
-  },
-  {
-    id: "P002",
-    name: "Product 2",
-    category: "Category B",
-    price: 19.99,
-    stock: 5,
-    status: "Low Stock"
-  },
-  {
-    id: "P003",
-    name: "Product 3",
-    category: "Category A",
-    price: 39.99,
-    stock: 0,
-    status: "Out of Stock"
-  }
-];
-
 export default function Products() {
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("http://localhost:3334/product");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        // Assuming the API response structure matches the Product interface
+        // and includes a field that indicates if restock is required
+        // For now, I will add a placeholder restock_required field based on currentstock and reorderpoint
+        const productsWithStatus = data.map((product: any) => ({
+          ...product,
+          restock_required: product.currentstock <= product.reorderpoint,
+        }));
+        setProducts(productsWithStatus);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   return (
     <>
       <PageMeta
@@ -82,50 +81,48 @@ export default function Products() {
                   Name
                 </TableCell>
                 <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Category
+                  Current Stock
                 </TableCell>
                 <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Price
+                  Reorder Point
                 </TableCell>
                 <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Stock
+                  Safety Stock
                 </TableCell>
                 <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Status
+                  Restock Required
                 </TableCell>
               </TableRow>
             </TableHeader>
 
             <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
               {products.map((product) => (
-                <TableRow key={product.id}>
+                <TableRow key={product.productID}>
                   <TableCell className="py-3 text-gray-800 dark:text-white/90">
-                    {product.id}
+                    {product.productID}
                   </TableCell>
                   <TableCell className="py-3 text-gray-800 dark:text-white/90">
-                    {product.name}
+                    {product.product_name}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 dark:text-gray-400">
-                    {product.category}
+                    {product.CurrentStock}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 dark:text-gray-400">
-                    RM {product.price.toFixed(2)}
+                    {product.ReorderPoint}
                   </TableCell>
-                  <TableCell className="py-3 text-gray-500 dark:text-gray-400">
-                    {product.stock}
+                   <TableCell className="py-3 text-gray-500 dark:text-gray-400">
+                    {product.SafetyStock}
                   </TableCell>
                   <TableCell className="py-3">
                     <Badge
                       size="sm"
                       color={
-                        product.status === "In Stock"
-                          ? "success"
-                          : product.status === "Low Stock"
+                        product.restock_required === 1
                           ? "warning"
-                          : "error"
+                          : "success"
                       }
                     >
-                      {product.status}
+                      {product.restock_required === 1 ? "Low Stock" : "In Stock"}
                     </Badge>
                   </TableCell>
                 </TableRow>

@@ -21,6 +21,7 @@ import Home from "./pages/Dashboard/Home";
 import Products from "./pages/Products";
 import POSTerminal from "./components/pos/POSTerminal";
 import Sales from "./pages/Sales";
+import Insights from "./pages/Insights"; // Import Insights component
 
 export default function App() {
   return (
@@ -37,7 +38,7 @@ export default function App() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
             <Route path="/products" element={<Products />} />
-            <Route path="/insight" element={<Blank />} /> {/* Added route for /insight */}
+            <Route path="/insight" element={<Insights />} /> {/* Route for Insights page */}
 
             {/* POS Terminal */}
             <Route path="/pos-terminal" element={<POSTerminal />} /> {/* Added route for /pos-terminal */}

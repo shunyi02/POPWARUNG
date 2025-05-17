@@ -1,26 +1,33 @@
 import React, { useState, useEffect } from 'react';
+import Button from '../ui/button/Button'; // Assuming Button component path
+import { Modal } from '../ui/modal'; // Correct Modal component import path
 
 interface Product {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-}
-
-interface CartItem extends Product {
-  quantity: number;
+  productID: string;
+  product_name: string;
+  description: string;
+  CurrentStock: number;
+  ReorderPoint: number;
+  SafetyStock: number;
+  LeadTime: number;
+  cost: number;
 }
 
 const POSTerminal: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quantityToSell, setQuantityToSell] = useState<number>(1);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch products from your backend
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/products'); // Replace with your actual API endpoint
+        const response = await fetch('http://localhost:3334/product');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setProducts(data);
       } catch (error) {
@@ -31,71 +38,50 @@ const POSTerminal: React.FC = () => {
     fetchProducts();
   }, []);
 
-  const addToCart = (product: Product) => {
-    if (product.stock <= 0) {
-      alert('Product out of stock!');
-      return;
-    }
+  const handleAddToCartClick = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+    setQuantityToSell(1); // Reset quantity when opening modal
+    setError(null); // Clear previous errors
+  };
 
-    const existingItem = cart.find(item => item.id === product.id);
-    if (existingItem) {
-      if (existingItem.quantity >= product.stock) {
-        alert('Not enough stock!');
-        return;
+  const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const quantity = parseInt(event.target.value, 10);
+    if (!isNaN(quantity) && quantity > 0) {
+      setQuantityToSell(quantity);
+      if (selectedProduct && quantity > selectedProduct.CurrentStock) {
+        setError("Quantity cannot exceed current stock.");
+      } else {
+        setError(null);
       }
-      setCart(cart.map(item =>
-        item.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      setQuantityToSell(1);
+      setError("Please enter a valid quantity.");
     }
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(cart.filter(item => item.id !== productId));
-  };
-
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    const product = products.find(p => p.id === productId);
-    if (!product || newQuantity > product.stock) {
-      alert('Invalid quantity!');
-      return;
+  const handleConfirmSale = () => {
+    if (selectedProduct && quantityToSell > 0 && quantityToSell <= selectedProduct.CurrentStock) {
+      // Implement sale logic here (user will handle API update)
+      console.log(`Selling ${quantityToSell} of ${selectedProduct.product_name}`);
+      // For now, just close the modal
+      setIsModalOpen(false);
+    } else if (selectedProduct) {
+        setError("Invalid quantity or insufficient stock.");
     }
-
-    setCart(cart.map(item =>
-      item.id === productId
-        ? { ...item, quantity: newQuantity }
-        : item
-    ));
   };
 
-  const calculateTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
-  const handleCheckout = async () => {
-    try {
-      // TODO: Implement API call to process sale and update stock
-      // Example:
-      // await processSale({
-      //   items: cart,
-      //   total: calculateTotal(),
-      //   timestamp: new Date()
-      // });
-      
-      setCart([]);
-      alert('Sale completed successfully!');
-    } catch (error) {
-      alert('Error processing sale!');
-    }
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+    setQuantityToSell(1);
+    setError(null);
   };
 
   return (
     <div className="grid grid-cols-12 gap-4">
       {/* Products Section */}
-      <div className="col-span-8">
+      <div className="col-span-12"> {/* Use full width as there's no cart section */}
         <div className="mb-4">
           <input
             type="text"
@@ -107,64 +93,72 @@ const POSTerminal: React.FC = () => {
         </div>
         <div className="grid grid-cols-3 gap-4">
           {products
-            .filter(product => 
-              product.name.toLowerCase().includes(searchTerm.toLowerCase())
+            .filter(product =>
+              product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
             )
             .map(product => (
               <div
-                key={product.id}
+                key={product.productID}
                 className="p-4 border rounded cursor-pointer hover:bg-gray-50"
-                onClick={() => addToCart(product)}
               >
-                <h3 className="font-bold">{product.name}</h3>
-                <p>${product.price.toFixed(2)}</p>
-                <p>Stock: {product.stock}</p>
+                <h3 className="font-bold">{product.product_name}</h3>
+                <p>ID: {product.productID}</p>
+                <p>Stock: {product.CurrentStock}</p>
+                <p>Reorder Point: {product.ReorderPoint}</p>
+                <p>Safety Stock: {product.SafetyStock}</p>
+                <p>${product.cost.toFixed(2)}</p>
+                <Button
+                  className="mt-2 w-full" // Apply full width class
+                  onClick={() => handleAddToCartClick(product)}
+                  disabled={product.CurrentStock <= 0}
+                  variant="primary" // Use variant for primary style
+                >
+                  Add to Cart
+                </Button>
               </div>
             ))}
         </div>
       </div>
 
-      {/* Cart Section */}
-      <div className="col-span-4 border-l p-4">
-        <h2 className="text-xl font-bold mb-4">Cart</h2>
-        {cart.map(item => (
-          <div key={item.id} className="mb-2 p-2 border rounded">
-            <div className="flex justify-between">
-              <span>{item.name}</span>
-              <button
-                onClick={() => removeFromCart(item.id)}
-                className="text-red-500"
-              >
-                ×
-              </button>
-            </div>
-            <div className="flex justify-between items-center mt-2">
-              <input
-                type="number"
-                min="1"
-                max={item.stock}
-                value={item.quantity}
-                onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
-                className="w-20 p-1 border rounded"
-              />
-              <span>${(item.price * item.quantity).toFixed(2)}</span>
+      {/* Sale Modal */}
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+        {selectedProduct && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+            <div className="bg-white rounded-lg p-6 w-96 text-center dark:bg-gray-800">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
+                Sell {selectedProduct.product_name}
+              </h3>
+              <div className="mb-4">
+                <label htmlFor="quantity" className="block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
+                  Quantity to Sell:
+                </label>
+                <input
+                  type="number"
+                  id="quantity"
+                  value={quantityToSell}
+                  onChange={handleQuantityChange}
+                  min="1"
+                  max={selectedProduct.CurrentStock}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white/90"
+                />
+                {error && <p className="text-red-500 text-theme-sm mt-1">{error}</p>}
+              </div>
+              <div className="flex justify-center gap-3">
+                <Button onClick={handleCloseModal} variant="outline">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmSale}
+                  disabled={!!error || quantityToSell <= 0 || quantityToSell > selectedProduct.CurrentStock}
+                  className="bg-green-600 text-white shadow-theme-xs hover:bg-green-700 disabled:opacity-50"
+                >
+                  Confirm Sale
+                </Button>
+              </div>
             </div>
           </div>
-        ))}
-        <div className="mt-4 border-t pt-4">
-          <div className="flex justify-between text-xl font-bold">
-            <span>Total:</span>
-            <span>${calculateTotal().toFixed(2)}</span>
-          </div>
-          <button
-            onClick={handleCheckout}
-            disabled={cart.length === 0}
-            className="w-full mt-4 p-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
-          >
-            Checkout
-          </button>
-        </div>
-      </div>
+        )}
+      </Modal>
     </div>
   );
 };

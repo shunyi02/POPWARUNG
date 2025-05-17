@@ -38,12 +38,12 @@ const navItems: NavItem[] = [
     path: "/"
   },
 
-  // {
+  {
 
-  //   icon: <ListIcon />,
-  //   name: "Insights",
-  //   path: "/insight",
-  // },
+    icon: <ListIcon />,
+    name: "Insights",
+    path: "/insight",
+  },
   {
     icon: <BoxCubeIcon />,
     name: "Products",

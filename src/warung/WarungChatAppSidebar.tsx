@@ -32,7 +32,8 @@ const ChatSidebar: React.FC = () => {
   }, [messages]);
 
   // Handle sending a message
-  const handleSendMessage = () => {
+  const handleSendMessage = (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
+    event.preventDefault(); // Prevent default form submission and page reload
     if (!inputValue.trim()) return;
 
     const newUserMessage: Message = {
@@ -47,36 +48,136 @@ const ChatSidebar: React.FC = () => {
 
     // Call API for bot response
     const fetchBotResponse = async () => {
-      const url = "http://localhost:3333/api/chatbot/";
-      const payload = {
-        prompt: inputValue.trim(),
-        inventory: {
-          "Product A": 10,
-          "Product B": 3,
-          "Product C": 0
-        },
-        lstm: {
-          "Product A": 30,
-          "Product B": 20,
-          "Product C": 5
-        },
-        date: new Date().toISOString().split('T')[0] // Use current date
-      };
+      const chatbotUrl = "http://localhost:3334/api/chatbot/";
+      const inventoryUrl = "http://localhost:3334/inventory";
 
       try {
-        const response = await fetch(url, {
+        console.log("Fetching inventory data...");
+        // Fetch inventory data
+        const inventoryResponse = await fetch(inventoryUrl);
+        if (!inventoryResponse.ok) {
+          throw new Error(`HTTP error fetching inventory! status: ${inventoryResponse.status}`);
+        }
+        const inventoryData = await inventoryResponse.json();
+        console.log("Inventory data fetched:", inventoryData);
+
+        // Format inventory data for the payload
+        const formattedInventory: { [key: string]: number } = {};
+        inventoryData.forEach((item: { productID: string; CurrentStock: number }) => {
+          formattedInventory[item.productID] = item.CurrentStock;
+        });
+        console.log("Formatted inventory:", formattedInventory);
+
+        console.log("Fetching prediction data...");
+        // Fetch prediction data from /api/predict
+        const predictResponse = await fetch('http://localhost:3334/api/predict', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ date: new Date().toISOString().split('T')[0] }), // Send current date
         });
 
+        if (!predictResponse.ok) {
+          throw new Error(`HTTP error fetching predictions! status: ${predictResponse.status}`);
+        }
+
+        const predictionData = await predictResponse.json();
+        console.log("Prediction data fetched:", predictionData);
+
+
+        if (predictionData.status !== 'success' || !predictionData.predictions) {
+           throw new Error(predictionData.message || 'Failed to get prediction data.');
+        }
+
+        // Process prediction data: change negative Forecasted to 0, NaN Weeks to 0, and ensure keys match Pydantic model
+        const processedPredictions = predictionData.predictions.map((p: any) => ({
+            productID: p.ProductID, // Ensure lowercase 'd'
+            days: p.Days,           // Ensure lowercase 'd'
+            forecasted: Math.max(0, p.Forecasted), // Ensure lowercase 'f'
+            current_stock: p["Current Stock"],
+            stock_status: p["Stock Status"],
+            weeks: isNaN(p.Weeks) ? 0 : p.Weeks,   // Ensure lowercase 'w'
+        }));
+        console.log("Processed predictions for InsertPred:", processedPredictions);
+
+        // Restructure processed predictions into a dictionary by ProductID
+        const lstmPayload: { [key: string]: any[] } = {};
+        processedPredictions.forEach((prediction: any) => {
+            if (!lstmPayload[prediction.ProductID]) {
+                lstmPayload[prediction.ProductID] = [];
+            }
+            lstmPayload[prediction.ProductID].push(prediction);
+        });
+        console.log("LSTM payload for chatbot:", lstmPayload);
+
+        // Send processed predictions to /InsertPred endpoint
+        console.log("Calling /InsertPred endpoint...");
+        const insertPredUrl = "http://localhost:3334/InsertPred";
+        try {
+          const insertResponse = await fetch(insertPredUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(processedPredictions), // Send the array of processed predictions
+          });
+          console.log("/InsertPred API response status:", insertResponse.status);
+          if (!insertResponse.ok) {
+            const errorText = await insertResponse.text();
+            console.error("/InsertPred API error response text:", errorText);
+            // Decide if this error should stop the chatbot call or just be logged
+            // For now, just log it and continue to chatbot
+          } else {
+            const insertResult = await insertResponse.json();
+            console.log("/InsertPred API response data:", insertResult);
+          }
+        } catch (insertError: any) {
+          console.error("Error calling /InsertPred API:", insertError);
+          // Decide if this error should stop the chatbot call or just be logged
+        }
+
+
+        const payload = {
+          prompt: inputValue.trim(),
+          inventory: formattedInventory,
+          lstm: lstmPayload, // Use the restructured dictionary
+          date: new Date().toISOString().split('T')[0] // Use current date
+        };
+        console.log("Final payload for chatbot API:", payload);
+        console.log("Type of lstm in payload:", typeof payload.lstm);
+        console.log("Is lstm in payload undefined?:", payload.lstm === undefined);
+
+
+        // Call API for bot response
+        console.log("Calling chatbot API...");
+        let response;
+        try {
+          const requestBody = JSON.stringify(payload);
+          console.log("Request body for chatbot API:", requestBody);
+          response = await fetch(chatbotUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: requestBody,
+          });
+          console.log("Chatbot API response status:", response.status);
+        } catch (networkError: any) {
+          console.error("Network error calling chatbot API:", networkError);
+          throw new Error(`Network error calling chatbot API: ${networkError.message}`);
+        }
+        
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          console.error("Chatbot API error response text:", errorText);
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
+        console.log("Chatbot API response data:", data);
+
 
         let botResponseText = data.response;
         let showAnalysisButton = false;
@@ -96,12 +197,12 @@ const ChatSidebar: React.FC = () => {
         setMessages((prev) => [...prev, botReply]);
         setIsLoading(false); // Set loading to false after successful response
 
-      } catch (error) {
-        console.error("Error fetching chatbot response:", error);
+      } catch (error: any) { // Catch any error in the async function
+        console.error("An error occurred in fetchBotResponse:", error);
         const errorReply: Message = {
           id: Date.now() + 1,
           from: "bot",
-          text: "Sorry, I couldn't get a response from the chatbot.",
+          text: `Sorry, an error occurred: ${error.message || 'Unknown error'}`,
         };
         setMessages((prev) => [...prev, errorReply]);
         setIsLoading(false); // Set loading to false on error
@@ -115,7 +216,7 @@ const ChatSidebar: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSendMessage();
+      handleSendMessage(e); // Pass the event object
     }
   };
 
@@ -181,20 +282,20 @@ const ChatSidebar: React.FC = () => {
             >
               <div className={`flex flex-col ${from === "user" ? "items-end" : "items-start"}`}>
                 <div
-                  className={`p-3 rounded-lg break-words max-w-xl w-fit ${
+                  className={`p-3 rounded-lg break-words max-w-full w-fit ${ // Changed max-w-xl to max-w-full
                     from === "user"
                       ? "bg-gray-300 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-br-none"
                       : "bg-red-200 dark:bg-red-700 text-gray-900 dark:text-gray-100 rounded-bl-none"
                   }`}
                 >
-                {from === "bot" ? <ReactMarkdown>{text}</ReactMarkdown> : text}
+                {from === "bot" ? <div className="prose dark:prose-invert max-w-none"><ReactMarkdown>{text}</ReactMarkdown></div> : text} 
                 </div>
                 {from === "bot" && showAnalysisButton && (
                   <Button
                     size="sm"
                     variant="primary"
                     className="mt-2"
-                    onClick={() => navigate('/insight')} // Add onClick handler
+                    onClick={() => navigate('/')} // Add onClick handler
                   >
                     In-Depth Analysis
                   </Button>
@@ -252,7 +353,7 @@ const ChatSidebar: React.FC = () => {
             onKeyDown={handleKeyDown}
           />
           <button
-            onClick={handleSendMessage}
+            onClick={(event) => handleSendMessage(event)} // Pass the event object
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition" // Send button is red
             aria-label="Send message"
           >
