@@ -3,9 +3,11 @@ import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
+  BoltIcon,
   BoxCubeIcon,
   CalenderIcon,
   ChevronDownIcon,
+  FolderIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
@@ -17,6 +19,10 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
+
+interface AppSidebarProps {
+  isChatOpen: boolean;
+}
 
 type NavItem = {
   name: string;
@@ -30,42 +36,29 @@ const navItems: NavItem[] = [
     icon: <GridIcon />,
     name: "Dashboard",
     path: "/"
-    // subItems: [
-    //   { name: "Ecommerce", path: "/", pro: false },
-    //   { name: "Ecommerce", path: "/", pro: false },
-    // ],
   },
-  {
-    icon: <ListIcon />,
-    name: "Insights",
-    path: "/blank",
-  },
-  {
-    name: "Products",
-    icon: <TableIcon />,
-    subItems: [
-          { name: "Store 1", path: "/product_1", pro: false },
-          { name: "Store 2", path: "/product_2", pro: false },
-        ],
-  },
+
   // {
-  //   name: "Forms",
+
   //   icon: <ListIcon />,
-  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+  //   name: "Insights",
+  //   path: "/insight",
   // },
-  // {
-  //   name: "Tables",
-  //   icon: <TableIcon />,
-  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  // },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Blank Page", path: "/blank", pro: false },
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Products",
+    path: "/products",
+  },
+  {
+    icon: <FolderIcon />,
+    name: "Sales",
+    path: "/sales",
+  },
+  {
+    icon: <BoltIcon />,
+    name: "POS",
+    path: "/pos-terminal",
+  },
 ];
 
 const othersItems: NavItem[] = [
@@ -99,7 +92,7 @@ const othersItems: NavItem[] = [
   },
 ];
 
-const AppSidebar: React.FC = ({ isChatOpen }) => {
+const AppSidebar: React.FC<AppSidebarProps> = ({ isChatOpen }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 
