@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
+from mysql.connector import Error
 from dotenv import load_dotenv
 import os
 from dashscope import Application
@@ -8,9 +9,10 @@ import dashscope
 from pydantic import BaseModel
 from http import HTTPStatus
 
-# Load environment variables from .env file
+# Load environment variables from .env
 load_dotenv()
 
+# Initialize FastAPI app
 app = FastAPI()
 
 # Enable CORS (adjust origins in production)
@@ -22,11 +24,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# DashScope Configuration
 dashscope.base_http_api_url = 'https://dashscope-intl.aliyuncs.com/api/v1'
-
-# Set your DashScope key and app ID (Use env var in production!)
 DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
 APP_ID = "a58f8b59b1ae482e8368c7ac0b23a5c6"
+
+if not DASHSCOPE_API_KEY:
+    raise RuntimeError("DASHSCOPE_API_KEY is missing from environment variables")
 
 # Define input schema
 class ChatbotRequest(BaseModel):
@@ -35,96 +39,26 @@ class ChatbotRequest(BaseModel):
     lstm: dict
     date: str
 
-# Get DB connection
+# MySQL DB Connection
 def get_connection():
-    return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        port=3306
-    )
-
-# API: Get total earnings by month for a given year
-@app.get("/api/sales")
-def get_sales_by_year(year: int):
     try:
-        conn = get_connection()
-        print("success connection")
-        cursor = conn.cursor(dictionary=True)
+        conn = mysql.connector.connect(
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            port=int(os.getenv("DB_PORT", 3306))
+        )
+        return conn
+    except Error as e:
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
-        query = """
-            SELECT 
-              MONTH(Date) AS month,
-              SUM(TotalEarn) AS total_earn
-            FROM qbi_file_20250517_13_04_46_0
-        """
-        cursor.execute(query, (year,))
-        results = cursor.fetchall()
+# Health check endpoint
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
-        # Fill in missing months
-        monthly_totals = [0.0] * 12
-        for row in results:
-            monthly_totals[row["month"] - 1] = float(row["total_earn"])
-
-        return monthly_totals
-
-    except mysql.connector.Error as err:
-        print("MySQL Error:", err)
-        raise HTTPException(status_code=500, detail="Database error")
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-            
-@app.get("/api/tables")
-def list_tables():
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("SHOW TABLES;")
-        tables = cursor.fetchall()  # returns list of tuples like [('sales',), ('inventory',)]
-        print(tables)
-
-        return tables
-
-    except mysql.connector.Error as err:
-        print("MySQL Error:", err)
-        raise HTTPException(status_code=500, detail="Database error")
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
-# API: Get all inventory records
-@app.get("/api/inventory")
-def get_inventory():
-    try:
-        conn = get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        query = """
-            SELECT 
-              Date, ProductID, StoreID, QtyIn, QtyOut, Balance
-            FROM qbi_file_20250517_13_05_05_0
-            ORDER BY Date DESC;
-        """
-        cursor.execute(query)
-        return cursor.fetchall()
-
-    except mysql.connector.Error as err:
-        print("MySQL Error:", err)
-        raise HTTPException(status_code=500, detail="Database error")
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-            
+# Chatbot endpoint
 @app.post("/api/chatbot/")
 def chatbot_analysis(request: ChatbotRequest):
     try:
@@ -154,3 +88,37 @@ def chatbot_analysis(request: ChatbotRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+# Example endpoint to fetch inventory from DB
+@app.get("/inventory")
+def get_inventory():
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT productID, CurrentStock  FROM inventory ORDER BY productID ASC;")
+        results = cursor.fetchall()
+        return results
+    except Error as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            conn.close()
+            
+@app.get("/api/tables")
+def list_tables():
+    conn = None
+    cursor = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SHOW TABLES")
+        tables = cursor.fetchall()
+        return {"tables": tables}
+    except mysql.connector.Error as err:
+        print("MySQL Error:", err)
+        raise HTTPException(status_code=500, detail="Database error")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
