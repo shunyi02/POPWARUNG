@@ -43,7 +43,10 @@ const navItems: NavItem[] = [
   {
     name: "Products",
     icon: <TableIcon />,
-    path: "/profile",
+    subItems: [
+          { name: "Store 1", path: "/product_1", pro: false },
+          { name: "Store 2", path: "/product_2", pro: false },
+        ],
   },
   // {
   //   name: "Forms",
