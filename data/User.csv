@@ -1,0 +1,51 @@
+UserID,Name,Email Address,Phone Number,Gender,DOB,State
+U001,Aminah Ahmad,aminah.ahmad@example.com,0107278654,Male,6/25/2006,Sabah
+U002,Lim Wei Keat,lim.weikeat@example.com,0176460687,Female,9/11/1983,Melaka
+U003,Muhammad Hafiz,hafiz.mohd@example.com,0197580170,Female,2/15/2005,Kelantan
+U004,Nurul Ain,nurulain.nordin@example.com,0174504746,Male,6/1/2001,Melaka
+U005,Tan Siew Ling,tan.s.ling@example.com,0117325273,Male,11/14/1978,Melaka
+U006,Arjun Raj,arjun.raj@example.com,0133348098,Male,9/25/2005,Kuala Lumpur
+U007,Farah Hanum,farahanum.khadijah@example.com,0176295677,Male,9/17/1971,Melaka
+U008,Mohd Azri,azri.abdullah@example.com,0188703343,Male,6/8/1972,Selangor
+U009,Lee Mei Fen,meifen.lee@example.com,0122928030,Male,11/12/2003,Johor
+U010,Hasnul Amir,hasnul.amir@example.com,0107324455,Female,9/11/1995,Penang
+U011,Siti Nurhaliza,sitihaliza88@example.com,0111083615,Female,6/22/2006,Melaka
+U012,Chong Wei Feng,chongwf@example.com,0107424199,Male,11/28/1974,Perak
+U013,Nur Diana Abu Bakar,diana.abubakar@example.com,0199312899,Female,7/27/1982,Kuala Lumpur
+U014,Wong Kar Wai,wkwong@example.com,0124414551,Male,1/23/1966,Perak
+U015,Ramesh Kumar,rameshkumar90@example.com,0143660580,Male,6/25/1997,Melaka
+U016,Norazura Hassan,norazurahassan@example.com,0137426500,Male,5/28/2000,Selangor
+U017,Fatin Nabilah,fatin.nabilah@example.com,0143775225,Male,9/7/1996,Melaka
+U018,Khairul Anwar,anwar.khairul@example.com,0143567644,Male,6/27/1994,Negeri Sembilan
+U019,Yap Mei Ling,yap.meiling@example.com,0191006140,Male,7/11/2007,Sabah
+U020,Zulkifli Omar,z.omar@example.com,0169813562,Female,5/10/1970,Perak
+U021,Intan Suraya,intansuraya@example.com,0117518359,Male,6/3/1975,Kuala Lumpur
+U022,Teoh Keng Hoo,teohkh@example.com,0101553280,Male,11/25/1981,Johor
+U023,Sharifah Aini,sharifahaini@example.com,0137070622,Female,12/17/2001,Kuala Lumpur
+U024,Mohd Irfan,irfan.m95@example.com,0173748752,Female,2/28/2000,Kelantan
+U025,Letchumi Subramaniam,lechu.subra@example.com,0135485332,Female,1/15/1997,Perak
+U026,Syed Ali Redza,syedaliredza@example.com,0105054092,Male,5/8/2005,Melaka
+U027,Nurul Huda,huda.nurul@example.com,0106646143,Female,2/7/1999,Sarawak
+U028,Ooi Beng Hee,ooi.benghee@example.com,0133257422,Male,11/22/1996,Penang
+U029,Hazwani Roslan,hwaniros@example.com,0188391862,Male,4/20/2004,Selangor
+U030,Iskandar Zulkarnain,izulkarnain@example.com,0121508593,Female,7/5/1985,Selangor
+U031,Kartini Abdul Rahman,kartini.abd@example.com,0193891684,Female,10/15/1980,Kelantan
+U032,Chuah Peng,chuah.peng@example.com,0141236828,Male,11/5/1988,Sabah
+U033,Norfadzilah Md Yusof,fadzilahmy@example.com,0177667649,Male,12/4/2002,Penang
+U034,Ganesh Pillay,ganeshp123@example.com,0126194685,Male,3/18/2000,Penang
+U035,Maslinda Binti Samad,lindasamad@example.com,0173142190,Female,10/18/2004,Melaka
+U036,Tengku Azfar,tengkuazfar@example.com,0171117725,Female,8/23/1990,Perak
+U037,Nur Aisyah,aisyahnur@example.com,0136021866,Female,10/28/1967,Sarawak
+U038,Firdaus Khalid,firdaus.khalid@example.com,0117407424,Female,5/15/2004,Johor
+U039,Suhaila Mohamed,suhailamohd@example.com,0116202039,Male,6/5/1986,Perak
+U040,Nik Mohd Aiman,aimannikm@example.com,0163813871,Female,11/28/2000,Sabah
+U041,Dina Farhana,dinafarhana@example.com,0189587601,Female,3/24/1998,Sabah
+U042,Mohd Razman,razman87@example.com,0175295185,Male,7/1/1977,Perak
+U043,Yusra Binti Yahya,yusrayahya@example.com,0192377882,Female,3/24/1997,Melaka
+U044,Vimala Suppiah,vimala.s@example.com,0123523633,Male,12/22/2002,Kelantan
+U045,Adibah Zainal,adibah.zainal@example.com,0117639417,Male,9/23/1989,Kuala Lumpur
+U046,Azrin Shah,azrinshah@example.com,0102008023,Male,7/27/1997,Kuala Lumpur
+U047,Norhayati Ishak,hayatiey@example.com,0132893112,Male,7/6/1989,Perak
+U048,Sazwan Mustafa,sazwantfa@example.com,0127989653,Male,6/7/1999,Perak
+U049,Shahrul Amri,amrishahrul@example.com,0138592956,Female,3/25/1972,Perak
+U050,Puteri Nadia,puterinadia@example.com,0117016387,Female,11/17/1985,Kuala Lumpur

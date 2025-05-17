@@ -37,7 +37,9 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     path: "/"
   },
+
   // {
+
   //   icon: <ListIcon />,
   //   name: "Insights",
   //   path: "/insight",
@@ -161,10 +163,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isChatOpen }) => {
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
     <ul className="flex flex-col gap-4">
       {items.map((nav, index) => (
-        <li key={nav.name}>
+        <li
+          key={nav.name}
+          onMouseEnter={() => setOpenSubmenu({ type: menuType, index })}
+          onMouseLeave={() => setOpenSubmenu(null)}
+        >
           {nav.subItems ? (
             <button
-              onClick={() => handleSubmenuToggle(index, menuType)}
               className={`menu-item group ${
                 openSubmenu?.type === menuType && openSubmenu?.index === index
                   ? "menu-item-active"
