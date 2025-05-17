@@ -101,15 +101,21 @@ const ChatSidebar: React.FC = () => {
         }));
         console.log("Processed predictions for InsertPred:", processedPredictions);
 
-        // Restructure processed predictions into a dictionary by ProductID
+        // Filter for Day 1 and Day 3 predictions
+        const filteredPredictions = processedPredictions.filter(
+            (p: any) => p.days === 1 || p.days === 3
+        );
+        console.log("Filtered predictions (Day 1 & 3):", filteredPredictions);
+
+        // Restructure filtered predictions into a dictionary by ProductID
         const lstmPayload: { [key: string]: any[] } = {};
-        processedPredictions.forEach((prediction: any) => {
-            if (!lstmPayload[prediction.ProductID]) {
-                lstmPayload[prediction.ProductID] = [];
+        filteredPredictions.forEach((prediction: any) => {
+            if (!lstmPayload[prediction.productID]) { // Use productID (lowercase)
+                lstmPayload[prediction.productID] = [];
             }
-            lstmPayload[prediction.ProductID].push(prediction);
+            lstmPayload[prediction.productID].push(prediction);
         });
-        console.log("LSTM payload for chatbot:", lstmPayload);
+        console.log("LSTM payload for chatbot (Day 1 & 3 only):", lstmPayload);
 
         // Send processed predictions to /InsertPred endpoint
         console.log("Calling /InsertPred endpoint...");
