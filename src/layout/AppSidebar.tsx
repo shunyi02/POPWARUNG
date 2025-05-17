@@ -18,6 +18,10 @@ import {
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
 
+interface AppSidebarProps {
+  isChatOpen: boolean;
+}
+
 type NavItem = {
   name: string;
   icon: React.ReactNode;
@@ -38,7 +42,7 @@ const navItems: NavItem[] = [
   {
     icon: <ListIcon />,
     name: "Insights",
-    path: "/blank",
+    path: "/insight",
   },
   // {
   //   icon: <UserCircleIcon />,
@@ -96,7 +100,7 @@ const othersItems: NavItem[] = [
   },
 ];
 
-const AppSidebar: React.FC = ({ isChatOpen }) => {
+const AppSidebar: React.FC<AppSidebarProps> = ({ isChatOpen }) => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 

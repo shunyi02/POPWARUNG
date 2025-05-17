@@ -33,6 +33,7 @@ export default function App() {
             <Route path="/profile" element={<UserProfiles />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
+            <Route path="/insight" element={<Blank />} /> {/* Added route for /insight */}
 
             {/* Forms */}
             <Route path="/form-elements" element={<FormElements />} />
