@@ -3,6 +3,7 @@ import numpy as np
 from prophet import Prophet
 import matplotlib.pyplot as plt
 import os
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, f1_score
 
 # Load data
 order_items = pd.read_csv('data/Order_Items.csv')
@@ -94,8 +95,8 @@ def plot_forecast_subplots(product_id):
     plt.show()
 
 
-# Get list of unique product IDs
-product_ids = daily_sales_per_product['ProductID'].unique()
+# Get list of all product IDs from Product.csv (not just those with sales)
+product_ids = products['ProductID'].unique()
 
 # Plot forecast for each product in a single window with subplots
 for pid in product_ids:
@@ -110,8 +111,6 @@ forecast_df.to_csv(output_file, index=False)
 
 print(f"\n✅ Forecast saved to '{os.path.abspath(output_file)}'")
 
-
-from scikit-learn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, f1_score
 
 def evaluate_forecast(y_true, y_pred, stock_level):
     # Regression metrics
@@ -147,3 +146,22 @@ def walk_forward_validation(df, product_id, forecast_days_list, train_window=60,
             r2 = r2_score(y_true, y_pred)
             results.append({'horizon': horizon, 'mae': mae, 'rmse': rmse, 'r2': r2})
     return pd.DataFrame(results)
+
+
+def regression_report(results_df):
+    """
+    Print a regression report from a DataFrame of results.
+    Expects columns: 'horizon', 'mae', 'rmse', 'r2'
+    """
+    print("Regression Performance Report")
+    print("="*30)
+    for horizon in sorted(results_df['horizon'].unique()):
+        subset = results_df[results_df['horizon'] == horizon]
+        print(f"\nHorizon: {horizon} day(s)")
+        print(f"  MAE : {subset['mae'].mean():.4f}")
+        print(f"  RMSE: {subset['rmse'].mean():.4f}")
+        print(f"  R²  : {subset['r2'].mean():.4f}")
+    print("\nOverall:")
+    print(f"  MAE : {results_df['mae'].mean():.4f}")
+    print(f"  RMSE: {results_df['rmse'].mean():.4f}")
+    print(f"  R²  : {results_df['r2'].mean():.4f}")
