@@ -97,17 +97,7 @@ def plot_forecast_subplots(product_id):
     plt.tight_layout(rect=[0, 0.03, 1, 0.92])
     plt.show()
 
-# After the main forecasting loop, add:
-evaluation_results = []
-for pid in product_ids:
-    if pid in daily_sales_per_product['ProductID'].unique():
-        wfv_results = walk_forward_validation(daily_sales_per_product, pid, forecast_days_list)
-        evaluation_results.append(wfv_results)
 
-if evaluation_results:
-    combined_results = pd.concat(evaluation_results)
-    regression_report(combined_results)
-    combined_results.to_csv('forecast_evaluation.csv', index=False)
 
 # Plot forecast for each product in a single window with subplots
 for pid in product_ids:
@@ -123,6 +113,7 @@ forecast_df.to_csv(output_file, index=False)
 print(f"\n Forecast saved to '{os.path.abspath(output_file)}'")
 
 
+# --- Place all function definitions here ---
 def evaluate_forecast(y_true, y_pred, stock_level):
     # Regression metrics
     mae = mean_absolute_error(y_true, y_pred)
@@ -160,7 +151,17 @@ def walk_forward_validation(df, product_id, forecast_days_list, train_window=30,
                 r2 = float('nan')  # or None
             results.append({'horizon': horizon, 'mae': mae, 'rmse': rmse, 'r2': r2})
     return pd.DataFrame(results)
+# After the main forecasting loop, add:
+evaluation_results = []
+for pid in product_ids:
+    if pid in daily_sales_per_product['ProductID'].unique():
+        wfv_results = walk_forward_validation(daily_sales_per_product, pid, forecast_days_list)
+        evaluation_results.append(wfv_results)
 
+if evaluation_results:
+    combined_results = pd.concat(evaluation_results)
+    regression_report(combined_results)
+    combined_results.to_csv('forecast_evaluation.csv', index=False)
 
 def regression_report(results_df):
     """
