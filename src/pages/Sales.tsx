@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import {
@@ -9,40 +10,46 @@ import {
 } from "../components/ui/table";
 import Badge from "../components/ui/badge/Badge";
 
-interface SaleItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-}
-
 interface Sale {
   id: string;
-  timestamp: string;
-  items: SaleItem[];
-  total: number;
-  status: "Completed" | "Refunded" | "Cancelled";
+  userId: string;
+  orderDate: string;
+  totalAmount: number;
 }
 
-// Sample data - replace with actual data later
-const sales: Sale[] = [
-  {
-    id: "S001",
-    timestamp: "2024-01-20 14:30:00",
-    items: [
-      {
-        productId: "P001",
-        productName: "Product 1",
-        quantity: 2,
-        price: 29.99
-      }
-    ],
-    total: 59.98,
-    status: "Completed"
-  }
-];
-
 export default function Sales() {
+  const [sales, setSales] = useState<Sale[]>([]);
+
+  useEffect(() => {
+    const fetchSales = async () => {
+      try {
+        const response = await fetch('data/Sales.csv');
+        const csvText = await response.text();
+        
+        // Skip header row and parse CSV
+        const rows = csvText.split('\n').slice(1);
+        const parsedSales = rows
+          .map(row => {
+            const [id, userId, orderDate, totalAmount] = row.split(',');
+            return {
+              id,
+              userId,
+              orderDate,
+              totalAmount: parseFloat(totalAmount)
+            };
+          })
+          // Sort by order date in descending order (latest first)
+          .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+        
+        setSales(parsedSales);
+      } catch (error) {
+        console.error('Error loading sales data:', error);
+        setSales([]); // Set empty array on error
+      }
+    };
+
+    fetchSales();
+  }, []);
   return (
     <>
       <PageMeta
@@ -75,16 +82,13 @@ export default function Sales() {
                   Sale ID
                 </TableCell>
                 <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Date & Time
+                  User ID
                 </TableCell>
                 <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Items
+                  Order Date
                 </TableCell>
                 <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Total
-                </TableCell>
-                <TableCell isHeader className="py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
-                  Status
+                  Total Amount (MYR)
                 </TableCell>
               </TableRow>
             </TableHeader>
@@ -96,27 +100,13 @@ export default function Sales() {
                     {sale.id}
                   </TableCell>
                   <TableCell className="py-3 text-gray-800 dark:text-white/90">
-                    {sale.timestamp}
+                    {sale.userId}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 dark:text-gray-400">
-                    {sale.items.length} items
+                    {sale.orderDate}
                   </TableCell>
                   <TableCell className="py-3 text-gray-500 dark:text-gray-400">
-                    RM {sale.total.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <Badge
-                      size="sm"
-                      color={
-                        sale.status === "Completed"
-                          ? "success"
-                          : sale.status === "Refunded"
-                          ? "warning"
-                          : "error"
-                      }
-                    >
-                      {sale.status}
-                    </Badge>
+                    RM {sale.totalAmount.toFixed(2)}
                   </TableCell>
                 </TableRow>
               ))}
