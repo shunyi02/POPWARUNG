@@ -6,10 +6,6 @@ import RecentOrders from "../../components/ecommerce/RecentOrders";
 import DemographicCard from "../../components/ecommerce/DemographicCard";
 import PageMeta from "../../components/common/PageMeta";
 
-import WarungMonthlySalesChart from "../../warung/WarungMonthlySalesChart";
-import WarungProductStockChart from "../../warung/WarungProductStockChart";
-import WarungMonthlyTarget from "../../warung/WarungMonthlyTarget";
-import WarungTableTop from "../../warung/WarungTableTop5";
 
 export default function Home() {
   return (
@@ -18,35 +14,15 @@ export default function Home() {
         title="React.js Ecommerce Dashboard | TailAdmin - React.js Admin Dashboard Template"
         description="This is React.js Ecommerce Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 space-y-6 xl:col-span-7 max-h-[460px] overflow-auto">
-          {/* <EcommerceMetrics /> */}
-          <WarungMonthlySalesChart />
+      {/* Add QuickBI View */}
+      <div className="col-span-12 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <iframe
+            src="https://bi-cn-hongkong.data.aliyun.com/token3rd/dashboard/view/pc.htm?pageId=a211e2cb-6ebf-493f-883d-a96f9ee2134e&accessTicket=f7b59faa-429f-46a2-92bb-6bedf650f263&dd_orientation=auto "
+            className="w-full h-[600px] rounded-2xl"
+            frameBorder="0"
+            allowFullScreen
+          />
         </div>
-
-        <div className="col-span-12 xl:col-span-5 max-h-[460px] overflow-auto">
-          {/* <MonthlyTarget /> */}
-          <WarungMonthlyTarget />
-        </div>
-        <div className="col-span-12 space-y-6 xl:col-span-7 max-h-[380px] overflow-auto">
-          <WarungProductStockChart />
-        </div>
-        <div className="col-span-12 space-y-6 xl:col-span-5 max-h-[380px] overflow-auto">
-          <WarungTableTop />
-        </div>
-
-        {/* <div className="col-span-12">
-          <StatisticsChart />
-        </div>
-
-        <div className="col-span-12 xl:col-span-5">
-          <DemographicCard />
-        </div>
-
-        <div className="col-span-12 xl:col-span-7">
-          <RecentOrders />
-        </div> */}
-      </div>
     </>
   );
 }
