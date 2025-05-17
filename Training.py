@@ -109,3 +109,41 @@ output_file = 'product_forecasts.csv'
 forecast_df.to_csv(output_file, index=False)
 
 print(f"\n✅ Forecast saved to '{os.path.abspath(output_file)}'")
+
+
+from scikit-learn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, f1_score
+
+def evaluate_forecast(y_true, y_pred, stock_level):
+    # Regression metrics
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = mean_squared_error(y_true, y_pred, squared=False)
+    r2 = r2_score(y_true, y_pred)
+    # Classification: 1 if forecast > stock, else 0
+    y_true_class = (y_true > stock_level).astype(int)
+    y_pred_class = (y_pred > stock_level).astype(int)
+    acc = accuracy_score(y_true_class, y_pred_class)
+    f1 = f1_score(y_true_class, y_pred_class)
+    return {'mae': mae, 'rmse': rmse, 'r2': r2, 'accuracy': acc, 'f1': f1}
+
+def walk_forward_validation(df, product_id, forecast_days_list, train_window=60, step=7):
+    df_p = df[df['ProductID'] == product_id].sort_values('ds')
+    results = []
+    for start in range(0, len(df_p) - train_window - max(forecast_days_list), step):
+        train = df_p.iloc[start:start+train_window]
+        test_start = start + train_window
+        for horizon in forecast_days_list:
+            test = df_p.iloc[test_start:test_start+horizon]
+            if len(test) < horizon:
+                continue
+            model = Prophet(yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=False)
+            # Add holidays here if needed
+            model.fit(train[['ds', 'y']])
+            future = model.make_future_dataframe(periods=horizon)
+            forecast = model.predict(future)
+            y_pred = forecast['yhat'][-horizon:].values
+            y_true = test['y'].values
+            mae = mean_absolute_error(y_true, y_pred)
+            rmse = mean_squared_error(y_true, y_pred, squared=False)
+            r2 = r2_score(y_true, y_pred)
+            results.append({'horizon': horizon, 'mae': mae, 'rmse': rmse, 'r2': r2})
+    return pd.DataFrame(results)
