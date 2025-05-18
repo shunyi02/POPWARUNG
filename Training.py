@@ -27,15 +27,17 @@ class suppress_stdout_stderr(contextlib.ContextDecorator):
         return False
 
 # Enhanced forecasting function
+# Modified plotting and stock analysis in generate_forecast function
 def generate_forecast(product_id, data, horizons):
     df_p = data[data['ProductID'] == product_id]
-    if len(df_p) < 14:  # Minimum 2 weeks of data
+    if len(df_p) < 14:
         print(f"Skipping {product_id} - insufficient data ({len(df_p)} records)")
         return None
-    
+
     stock = product_stock.get(product_id, 0)
-    
+
     try:
+        # Model setup and training
         model = Prophet(
             yearly_seasonality=False,
             weekly_seasonality=True,
@@ -46,45 +48,76 @@ def generate_forecast(product_id, data, horizons):
             seasonality_mode='additive'
         )
         model.add_country_holidays(country_name='MY')
-        
+
         with suppress_stdout_stderr():
             model.fit(df_p[['ds', 'y']])
-        
+
         future = model.make_future_dataframe(periods=max(horizons))
         forecast = model.predict(future)
-        
+
         # Generate predictions for all horizons
         predictions = {
             days: forecast[forecast['ds'] > df_p['ds'].max()].head(days)
             for days in horizons
         }
-        
-        # Stock analysis and alerts
+
+        # Create custom line plot
+        plt.figure(figsize=(12, 6))
+        plt.plot(df_p['ds'], df_p['y'], 'b-', label='Historical Sales')
+
+        # Plot forecasted values
+        forecast_dates = forecast[forecast['ds'] > df_p['ds'].max()]
+        plt.plot(forecast_dates['ds'], forecast_dates['yhat'], 'r--', label='Forecast')
+
+        # Add uncertainty shading
+        plt.fill_between(forecast_dates['ds'], 
+                        forecast_dates['yhat_lower'], 
+                        forecast_dates['yhat_upper'], 
+                        color='pink', alpha=0.3, label='Uncertainty')
+
+        plt.axvline(x=df_p['ds'].max(), color='gray', linestyle=':', label='Forecast Start')
+        plt.title(f"Sales Forecast for Product {product_id}")
+        plt.xlabel('Date')
+        plt.ylabel('Units Sold')
+        plt.legend()
+        plt.grid(True)
+
+        # Add restock info to plot
+        restock_text = []
+        for days in horizons:
+            forecast_subset = predictions[days]
+            total_forecast = round(sum(forecast_subset['yhat']))
+            needed = max(total_forecast - stock, 0)
+            restock_text.append(
+                f"{days}-day: Need {needed} units (Current: {stock})"
+            )
+
+        plt.annotate('\n'.join(restock_text),
+                    xy=(0.05, 0.65), 
+                    xycoords='axes fraction',
+                    bbox=dict(boxstyle="round", fc="white"))
+
+        plt.savefig(f'forecast_plots/product_{product_id}.png')
+        plt.close()
+
+        # Modified stock analysis
         for days in horizons:
             forecast_subset = predictions[days]
             daily_forecast = forecast_subset['yhat'].values
-            cumulative_stock = stock - np.cumsum(daily_forecast)
-            
-            stockout_days = np.where(cumulative_stock < 0)[0]
-            status = "Restock Needed" if len(stockout_days) > 0 else "OK"
-            
+            total_forecast = round(sum(daily_forecast))
+            restock_amount = max(total_forecast - stock, 0)
+
             forecast_data.append({
                 'ProductID': product_id,
                 'HorizonDays': days,
-                'TotalForecast': round(sum(daily_forecast)),
+                'TotalForecast': total_forecast,
                 'CurrentStock': stock,
-                'Status': status,
-                'FirstStockout': stockout_days[0]+1 if len(stockout_days) > 0 else None
+                'RestockNeeded': restock_amount,
+                'StockStatus': 'OK' if restock_amount == 0 else 'Restock Needed'
             })
-        
-        # Plotting
-        fig = model.plot(forecast)
-        plt.title(f"Product {product_id} - Daily Sales Forecast")
-        plt.savefig(f'forecast_plots/product_{product_id}.png')
-        plt.close()
-        
+
         return predictions
-        
+
     except Exception as e:
         print(f"Error processing {product_id}: {str(e)}")
         return None
